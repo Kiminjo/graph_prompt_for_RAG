@@ -15,6 +15,8 @@ It is necessary to build a knowledge graph by building LLM on its own.
 
 from langchain_experimental.graph_transformers import LLMGraphTransformer
 from langchain_openai import ChatOpenAI
+from langchain_community.graphs import Neo4jGraph
+from langchain.chains import GraphCypherQAChain
 from langchain_core.documents import Document
 
 import os, sys 
@@ -33,6 +35,13 @@ with open("data/api_info.yaml", "r") as f:
     f.close()
 openai_api = api_list["OpenAI"]["API"]
 
+# Set neo4j graph 
+os.environ["NEO4J_URI"] = "<YOUR_NEO4J_URI>"
+os.environ["NEO4J_USERNAME"] = "<YOUR_NEO4J"
+os.environ["NEO4J_PASSWORD"] = "<YOUR_NEO4J_PASSWORD>"
+
+graph = Neo4jGraph()
+
 # Preprare instance for construct graph DB 
 llm = ChatOpenAI(temperature=0, 
                  model_name="gpt-4-0125-preview", 
@@ -43,7 +52,7 @@ llm_transformer = LLMGraphTransformer(llm=llm,
 
 # Get data 
 script_paths = sorted([str(p) for p in Path("data/").glob("**/*.xlsx")])
-target_script = script_paths[3]
+target_script = script_paths[0]
 
 script_table = pd.read_excel(target_script)
 text = ""
@@ -55,4 +64,13 @@ documents = [Document(page_content=text)]
 graph_documents = llm_transformer.convert_to_graph_documents(documents)
 print(f"Nodes:{graph_documents[0].nodes}")
 print(f"Relationships:{graph_documents[0].relationships}")  
+graph.add_graph_documents(graph_documents)
 
+# Inference using graph 
+infer_llm = ChatOpenAI(temperature=0, 
+                       model_name="gpt-4-0125-preview", 
+                       openai_api_key=openai_api)
+chain = GraphCypherQAChain.from_llm(
+    graph=graph, llm=llm, exclude_types=["Genre"], verbose=True
+)
+print("here")
