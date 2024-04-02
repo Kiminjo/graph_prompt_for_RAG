@@ -10,6 +10,10 @@ This is confirmed by the fact that the generation prompt of the graph transforme
 - sacrifing accuracy. Do not add any information that is not explicitly
 - he aim is to achieve simplicity and clarity in the knowledge graph, making it
 
+Problems:
+- The graph module provided by langchain depends on neo4j.
+- In order to use this neo4j module, there is a problem that its own SQL language must be entered as a prompt.
+
 It is necessary to build a knowledge graph by building LLM on its own.
 """
 
